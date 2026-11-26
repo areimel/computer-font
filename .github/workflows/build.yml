@@ -1,0 +1,68 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.12'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - run: make setup
+      - run: make test
+      - run: make build
+      - run: make proof
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fonts
+          path: fonts/**
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: proofs
+          path: proofs/**
+          if-no-files-found: ignore
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      ZIP: ComputerFont-${{ github.ref_name }}.zip
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fonts
+          path: dist/fonts
+
+      - name: Package fonts
+        run: |
+          cp OFL.txt dist/
+          (cd dist && zip -r "../$ZIP" fonts OFL.txt)
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP }}
+          generate_release_notes: true
