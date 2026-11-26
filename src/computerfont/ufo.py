@@ -7,11 +7,23 @@ import ufoLib2
 
 from . import config as C
 from .corners import draw_contour
+from .kerning import groups, kerning
 from .registry import all_glyphs
+from .spacing import bearings
 
 
 def master_filename(wght: int, rond: int) -> str:
     return f"{C.FILE_STEM}-{C.style_name(wght, rond).replace(' ', '')}.ufo"
+
+
+def _apply_bearings(glyph, target: tuple[int, int] | None) -> None:
+    """Shift the outline so its ink sits at the target (lsb, rsb); sets the advance."""
+    bounds = glyph.getBounds()
+    if target is None or bounds is None:
+        return
+    lsb, rsb = target
+    glyph.move((lsb - round(bounds[0]), 0))
+    glyph.width = lsb + round(bounds[2] - bounds[0]) + rsb
 
 
 def build_ufo(wght: int, rond: int) -> ufoLib2.Font:
@@ -42,8 +54,11 @@ def build_ufo(wght: int, rond: int) -> ufoLib2.Font:
         pen = glyph.getPen()
         for contour in g.contours(p):
             draw_contour(pen, contour, p.radius)
+        _apply_bearings(glyph, bearings(g.name, p))
         order.append(g.name)
     font.lib["public.glyphOrder"] = order
+    font.groups.update(groups())
+    font.kerning.update(kerning(p))
     return font
 
 
