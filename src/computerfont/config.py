@@ -12,6 +12,7 @@ X_HEIGHT = 540
 ASCENDER = 760
 DESCENDER = -220
 
+STEM_CONTRAST = 0.6  # stem2 / stem: right stems are thinner than left stems
 CAP_BOX_W = 560  # outer width of a capital's drawing box (before sidebearings)
 LC_BOX_W = 480  # outer width of a lowercase drawing box
 
@@ -67,7 +68,8 @@ class Params:
 
     wght: int
     rond: int
-    stem: int  # vertical stroke thickness (heavy)
+    stem: int  # primary (left) vertical stroke thickness (heavy)
+    stem2: int  # secondary (right) vertical stroke: the style's left-heavy contrast
     bar: int  # horizontal stroke thickness (thinner)
     notch: int  # size of the square corner steps
     radius: int  # target corner radius (clamped per corner later)
@@ -88,6 +90,7 @@ class Params:
             wght=wght,
             rond=rond,
             stem=round(stem),
+            stem2=round(stem * STEM_CONTRAST),
             bar=round(_lerp(38, 120, t)),
             notch=round(_lerp(22, 44, t)),
             radius=round(stem / 2 * rond / 100),

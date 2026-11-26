@@ -51,13 +51,14 @@ def frame(
 ) -> list[Contour]:
     """Rectangular ring: outer shape + square counter, each with optional notched corners.
 
+    Left side uses ``p.stem``, right side ``p.stem2`` (the style's contrast);
     ``sides``/``bars`` override the vertical/horizontal stroke thickness.
     """
-    s = p.stem if sides is None else sides
+    sl, sr = (p.stem, p.stem2) if sides is None else (sides, sides)
     b = p.bar if bars is None else bars
     return [
         notched_rect(p, x0, y0, x1, y1, outer),
-        notched_rect(p, x0 + s, y0 + b, x1 - s, y1 - b, inner).counter(),
+        notched_rect(p, x0 + sl, y0 + b, x1 - sr, y1 - b, inner).counter(),
     ]
 
 
@@ -72,8 +73,8 @@ def arch(p: Params, x0: float, x1: float, y1: float, outer: str = "tl", inner: s
 
     ``outer``/``inner`` name corners to notch ("tl"/"tr" outer; "tl"/"tr" of the counter).
     """
-    s, b = p.stem, p.bar
-    pts = [(x0, 0), (x0 + s, 0), (x0 + s, y1 - b), (x1 - s, y1 - b), (x1 - s, 0), (x1, 0), (x1, y1), (x0, y1)]
+    s, s2, b = p.stem, p.stem2, p.bar
+    pts = [(x0, 0), (x0 + s, 0), (x0 + s, y1 - b), (x1 - s2, y1 - b), (x1 - s2, 0), (x1, 0), (x1, y1), (x0, y1)]
     # indices: 7 = outer TL, 6 = outer TR, 2 = counter TL, 3 = counter TR
     idx = {"tl": 7, "tr": 6}
     inn = {"tl": 2, "tr": 3}

@@ -1,5 +1,5 @@
 VENV=.venv
-PY=$(VENV)/bin/python
+PY=PYTHONPATH=src $(VENV)/bin/python
 
 .PHONY: setup build test proof reference clean
 
