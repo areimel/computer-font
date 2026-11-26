@@ -1,5 +1,5 @@
 """Punctuation (! " ' ( ) , - . / : ; ? [ \\ ] _ ` { | })."""
-from ..components import bar, dot, lc_width, notched_poly, notched_rect, stem, tail_dot
+from ..components import bar, diag, dot, lc_width, notched_poly, notched_rect, stem, tail_dot
 from ..config import Params
 from ..registry import glyph
 
@@ -103,24 +103,24 @@ def bracketright(p: Params):
 
 
 def _paren_pts(p: Params, x0: float, s: float, k: float):
-    """'(' outline: outer arms at x0+k, middle section bulges out to x0 (stair-stepped)."""
+    """'(' outline: short arms at top and bottom, the middle section offset outward by ``k``."""
     y0, y1, b = p.desc, p.asc, p.bar
-    h = (y1 - y0) / 4
-    xs, x1 = x0 + k, x0 + k + s + p.bar
+    h = (y1 - y0) // 6
+    xs, x1 = x0 + k, x0 + k + s + p.dot // 2
     return [(xs, y0), (x1, y0), (x1, y0 + b), (xs + s, y0 + b), (xs + s, y0 + h), (x0 + s, y0 + h),
             (x0 + s, y1 - h), (xs + s, y1 - h), (xs + s, y1 - b), (x1, y1 - b), (x1, y1), (xs, y1),
             (xs, y1 - h), (x0, y1 - h), (x0, y0 + h), (xs, y0 + h)], x1
 
 
-@glyph("parenleft", 0x28, width=lambda p: p.adv(p.stem + 2 * p.bar))
+@glyph("parenleft", 0x28, width=lambda p: p.adv(2 * p.notch + p.stem + p.dot // 2))
 def parenleft(p: Params):
-    pts, _ = _paren_pts(p, p.sb, p.stem, p.bar)
+    pts, _ = _paren_pts(p, p.sb, p.stem, 2 * p.notch)
     return [notched_poly(p, pts, tl=11)]
 
 
-@glyph("parenright", 0x29, width=lambda p: p.adv(p.stem2 + 2 * p.bar))
+@glyph("parenright", 0x29, width=lambda p: p.adv(2 * p.notch + p.stem2 + p.dot // 2))
 def parenright(p: Params):
-    pts, x1 = _paren_pts(p, p.sb, p.stem2, p.bar)
+    pts, x1 = _paren_pts(p, p.sb, p.stem2, 2 * p.notch)
     return [notched_poly(p, pts, tl=10, flip=p.sb + x1)]
 
 
@@ -144,20 +144,13 @@ def braceright(p: Params):
     return [notched_poly(p, pts, tl=6, flip=p.sb + x1)]
 
 
-# ---- slashes: orthogonal stair (bottom bar, riser, top bar) ----------------
-
-def _slash_pts(p: Params, x0: float, x1: float):
-    s, b, c = p.stem, p.bar, p.cap
-    xm = (x0 + x1 - s) / 2
-    return [(x0, 0), (xm + s, 0), (xm + s, c - b), (x1, c - b), (x1, c), (xm, c), (xm, b), (x0, b)]
-
+# ---- slashes: one slanted parallelogram (4 fixed vertices); backslash is its mirror -------
 
 @glyph("slash", 0x2F, width=lc_width)
 def slash(p: Params):
-    return [notched_poly(p, _slash_pts(p, p.sb, p.sb + p.lc_w), tl=5)]
+    return [diag(p.sb, 0, p.sb + p.lc_w - p.stem, p.cap, p.stem)]
 
 
 @glyph("backslash", 0x5C, width=lc_width)
 def backslash(p: Params):
-    x0, x1 = p.sb, p.sb + p.lc_w
-    return [notched_poly(p, _slash_pts(p, x0, x1), tl=4, flip=x0 + x1)]
+    return [slash(p)[0].mirrored(p.sb + p.lc_w / 2)]

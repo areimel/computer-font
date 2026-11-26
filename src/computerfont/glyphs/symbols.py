@@ -1,16 +1,11 @@
 """Symbols: # $ % & * + < = > @ ^ ~ (AGL names numbersign ... asciitilde)."""
-from ..components import bar, frame, lc_width, math_axis, notched_rect, s_shape, stem
+from ..components import bar, diag as _diag, frame, lc_width, math_axis, notched_poly, notched_rect, s_shape, stem
 from ..config import Params
 from ..geometry import Contour, polygon, rect
 from ..registry import glyph
 
 
 # ---- private helpers (each used by only 1-2 glyphs here) -----------------------------------
-def _diag(x0: float, y0: float, x1: float, y1: float, t: float) -> Contour:
-    """Slanted stroke from bottom (x0,y0) to top (x1,y1), horizontal thickness t (4 fixed vertices)."""
-    return polygon((x0, y0), (x0 + t, y0), (x1 + t, y1), (x1, y1))
-
-
 def _cross(cx: float, cy: float, rx: float, ry: float, v: float, h: float) -> Contour:
     """Plus-shaped polygon: arms reach rx/ry from the centre; vertical arm width v, horizontal thickness h."""
     a, b = v / 2, h / 2
@@ -47,8 +42,8 @@ def dollar(p: Params):
 @glyph("percent", 0x25, width=lambda p: p.adv(p.cap_w + p.cap_w // 4))
 def percent(p: Params):
     x0, x1 = p.sb, p.sb + p.cap_w + p.cap_w // 4
-    w = 2 * p.stem2 + 2 * p.notch  # small ring: thin walls, square-ish counter
-    h = 2 * p.bar + 2 * p.notch
+    w = 2 * p.stem2 + p.cap // 7  # small rings, about a third of the height
+    h = 2 * p.bar + p.cap // 8
     return [
         *frame(p, x0, p.cap - h, x0 + w, p.cap, outer="tl", sides=p.stem2),
         *frame(p, x1 - w, 0, x1, h, sides=p.stem2),
@@ -56,16 +51,20 @@ def percent(p: Params):
     ]
 
 
-@glyph("ampersand", 0x26, width=lambda p: p.adv(p.cap_w))
+def _amp_w(p: Params) -> int:
+    return p.cap_w + p.stem2 + 2 * p.notch  # bowl box plus the spur reaching out to the right
+
+
+@glyph("ampersand", 0x26, width=lambda p: p.adv(_amp_w(p)))
 def ampersand(p: Params):
-    x0, x1 = p.sb, p.sb + p.cap_w
+    x0, xb = p.sb, p.sb + p.cap_w
+    x1 = p.sb + _amp_w(p)
     split = p.cap * 5 // 12  # top of the big lower bowl
-    ux1 = x1 - p.stem - p.notch  # the upper bowl is narrower than the lower one
-    return [
-        *frame(p, x0, 0, x1, split + p.bar, outer="tl"),
-        *frame(p, x0, split, ux1, p.cap, outer="tl"),
-        stem(p, x1 - p.stem2, split, p.cap - 2 * p.bar, p.stem2),  # detached right arm, gap above
-    ]
+    ux1 = x0 + p.cap_w * 2 // 3  # the upper loop is narrower than the bowl
+    yl = split - p.bar
+    spur = notched_poly(p, [(xb - p.stem2, yl), (x1, yl), (x1, yl + 3 * p.bar), (x1 - p.stem2, yl + 3 * p.bar),
+                            (x1 - p.stem2, yl + p.bar), (xb - p.stem2, yl + p.bar)], tl=2)
+    return [*frame(p, x0, 0, xb, split + p.bar, outer="tl"), *frame(p, x0, split, ux1, p.cap, outer="tl"), spur]
 
 
 @glyph("asterisk", 0x2A, width=lc_width)
@@ -110,13 +109,16 @@ def greater(p: Params):
 @glyph("at", 0x40, width=lambda p: p.adv(p.cap_w + p.cap_w // 4))
 def at(p: Params):
     x0, x1 = p.sb, p.sb + p.cap_w + p.cap_w // 4
-    g = p.bar  # channel between the outer frame and the inner ring
-    ix0, iy1 = x0 + p.stem + g, p.cap - p.bar - g
-    return [
-        *frame(p, x0, 0, x1, p.cap, outer="tl", inner="tr"),
-        # inner ring fused to the outer right/bottom walls (overlapping them)
-        *frame(p, ix0, p.bar // 2, x1 - p.stem2 // 2, iy1, sides=p.stem2),
-    ]
+    s, s2, b, g, c = p.stem, p.stem2, p.bar, p.notch, p.cap
+    # outer C: closed top and left, right wall stops short of the bottom bar (open tail slot)
+    outer = notched_poly(p, [(x0, 0), (x1, 0), (x1, b), (x1 - s2, b), (x0 + s, b), (x0 + s, c - b), (x1 - s2, c - b),
+                             (x1 - s2, 2 * b + g), (x1, 2 * b + g), (x1, c), (x0, c)], tl=10)
+    # inner 'a': top bar, mid bar, right stem, bottom bar, left stem below the mid bar
+    ix0, ix1, iy0, iy1 = x0 + s + b, x1 - s2 + g, b // 2, c - 2 * b
+    lo = iy0 + (iy1 - iy0 - b) // 2
+    inner = notched_poly(p, [(ix0, iy0), (ix1, iy0), (ix1, iy1), (ix0, iy1), (ix0, iy1 - b), (ix1 - s2, iy1 - b),
+                             (ix1 - s2, lo + b), (ix0, lo + b)], tl=3)
+    return [outer, inner, notched_rect(p, ix0 + s2, iy0 + b, ix1 - s2, lo, "tr").counter()]
 
 
 @glyph("asciicircum", 0x5E, width=lc_width)

@@ -3,28 +3,15 @@
 Every diagonal is a parallelogram/polygon with a fixed vertex count; only the
 coordinates (derived from ``Params``) change with weight, so masters stay compatible.
 """
-from ..components import cap_width, notched_rect
+from ..components import cap_width, notched_rect, vee_points
 from ..config import Params
 from ..geometry import polygon, rect
 from ..registry import glyph
 
 
-def _vee_poly(x0: float, x1: float, y0: float, y1: float, sl: float, sr: float, hw: float) -> list:
-    """Points (CCW) of a V from bottom-flat at y0 to the top at y1, left arm sl wide, right sr wide.
-
-    Bottom flat (half-width ``hw``) is centred; both arms keep the slope of their outer edges.
-    """
-    cx = (x0 + x1) / 2
-    a, b = cx - hw, x1 - cx - hw  # horizontal run of left/right outer edge
-    t = (x1 - sr - x0 - sl) / (a + b)
-    iy = y1 - (y1 - y0) * t
-    ix = x0 + sl + t * a
-    return [(cx - hw, y0), (cx + hw, y0), (x1, y1), (x1 - sr, y1), (ix, iy), (x0 + sl, y1), (x0, y1)]
-
-
 @glyph("V", 0x56, width=cap_width)
 def V(p: Params):
-    return [polygon(*_vee_poly(p.sb, p.sb + p.cap_w, 0, p.cap, p.stem, p.stem2, (p.stem + p.stem2) / 3))]
+    return [polygon(*vee_points(p.sb, p.sb + p.cap_w, 0, p.cap, p.stem, p.stem2, (p.stem + p.stem2) / 3))]
 
 
 @glyph("Y", 0x59, width=cap_width)
@@ -33,7 +20,7 @@ def Y(p: Params):
     ym = p.cap * 2 // 5
     hw = (s + s2) / 4  # half stalk
     cx = (x0 + x1) / 2
-    top = _vee_poly(x0, x1, ym, p.cap, s, s2, hw)
+    top = vee_points(x0, x1, ym, p.cap, s, s2, hw)
     return [polygon((cx - hw, 0), (cx + hw, 0), *top[1:], (cx - hw, ym))]
 
 

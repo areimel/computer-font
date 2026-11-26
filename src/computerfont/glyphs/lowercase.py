@@ -1,8 +1,8 @@
 """Lowercase a-z (U+0061-007A). Rectilinear forms; diagonals are stepped blocks."""
-from ..components import (arch, bowl_counter, desc_hook, dot, frame, lc_width, mid_bar, notched_poly,
+from ..components import (arch, bowl_counter, desc_hook, dot, frame, lc_width, mid_bar, notched_poly, vee_points,
                           notched_rect, s_shape)
 from ..config import Params
-from ..geometry import Contour
+from ..geometry import Contour, polygon
 from ..registry import glyph
 
 
@@ -91,9 +91,12 @@ def i(p: Params):
 
 @glyph("j", 0x6A, width=lambda p: p.adv(p.lc_w * 5 // 8))
 def j(p: Params):
+    """Stem and descender hook as one polygon, plus the dot."""
     x0, x1 = _box(p, p.lc_w * 5 // 8)
-    return [notched_rect(p, x1 - p.stem, p.bar, x1, p.xh, "tl"),
-            desc_hook(p, x0, x1, p.stem), _dot_over(p, x1 - p.stem / 2)]
+    s, b, d = p.stem, p.bar, p.desc
+    tick = d + b + b + p.notch
+    return [notched_poly(p, [(x0, d), (x1, d), (x1, p.xh), (x1 - s, p.xh), (x1 - s, d + b), (x0 + p.stem2, d + b),
+                       (x0 + p.stem2, tick), (x0, tick)], tl=(3,)), _dot_over(p, x1 - s / 2)]
 
 
 @glyph("k", 0x6B, width=lc_width)
@@ -179,17 +182,9 @@ def u(p: Params):
 
 @glyph("v", 0x76, width=lc_width)
 def v(p: Params):
-    """Stepped V: three tiers, each band shifted inward by dd; bottom tier merges."""
+    """Diagonal V at x-height, same construction as the capital."""
     x0, x1 = _box(p)
-    s, s2, xh = p.stem, p.stem2, p.xh
-    dd = (p.lc_w - s - s2) // 4
-    tl_, tr_ = s + dd * 3 // 4, s2 + dd * 3 // 4
-    h1, h2 = xh // 3, 2 * (xh // 3)
-    return [notched_poly(p, [(x0 + 2 * dd, 0), (x1 - 2 * dd, 0), (x1 - 2 * dd, h1), (x1 - dd, h1), (x1 - dd, h2),
-                       (x1, h2), (x1, xh), (x1 - tr_, xh), (x1 - tr_, h2), (x1 - dd - tr_, h2),
-                       (x1 - dd - tr_, h1), (x0 + dd + tl_, h1), (x0 + dd + tl_, h2), (x0 + tl_, h2),
-                       (x0 + tl_, xh), (x0, xh), (x0, h2), (x0 + dd, h2), (x0 + dd, h1),
-                       (x0 + 2 * dd, h1)], tl=(15,))]
+    return [polygon(*vee_points(x0, x1, 0, p.xh, p.stem, p.stem2, (p.stem + p.stem2) / 3))]
 
 
 @glyph("w", 0x77, width=lambda p: p.adv(p.lc_w * 3 // 2))

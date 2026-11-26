@@ -168,3 +168,21 @@ def desc_hook(p: Params, x0: float, x1: float, sw: float) -> Contour:
 def bowl_counter(p: Params, x0: float, x1: float) -> Contour:
     """Counter of a b/d/p/q bowl (hole with a notched top-right corner)."""
     return notched_rect(p, x0 + p.stem, p.bar, x1 - p.stem2, p.xh - p.bar, "tr").counter()
+
+
+def diag(x0: float, y0: float, x1: float, y1: float, t: float) -> Contour:
+    """Slanted stroke from bottom (x0,y0) to top (x1,y1), horizontal thickness t (4 fixed vertices)."""
+    return polygon((x0, y0), (x0 + t, y0), (x1 + t, y1), (x1, y1))
+
+
+def vee_points(x0: float, x1: float, y0: float, y1: float, sl: float, sr: float, hw: float) -> list:
+    """Points (CCW) of a V from bottom-flat at y0 to the top at y1, left arm sl wide, right sr wide.
+
+    Bottom flat (half-width ``hw``) is centred; both arms keep the slope of their outer edges.
+    """
+    cx = (x0 + x1) / 2
+    a, b = cx - hw, x1 - cx - hw  # horizontal run of left/right outer edge
+    t = (x1 - sr - x0 - sl) / (a + b)
+    iy = y1 - (y1 - y0) * t
+    ix = x0 + sl + t * a
+    return [(cx - hw, y0), (cx + hw, y0), (x1, y1), (x1 - sr, y1), (ix, iy), (x0 + sl, y1), (x0, y1)]
