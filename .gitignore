@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Build outputs
+build/
+fonts/
+sources/generated/
+proofs/
+*.ufo
+*.designspace
+
+# Reference material (never commit)
+reference/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~

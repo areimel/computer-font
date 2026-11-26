@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "computerfont"
+version = "0.1.0"
+description = "Parametric code-drawn variable font inspired by a 1992 blocky computer display face."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
