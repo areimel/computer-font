@@ -10,10 +10,15 @@ Computer Font is a parametric, open-source display typeface inspired by blocky 1
 - **ASCII character set:** printable ASCII (U+0020 to U+007E), 95 glyphs plus `.notdef`.
 - **Open license:** the font is released under the SIL Open Font License 1.1, and the build code under MIT.
 - **Reproducible builds:** Python generates UFO masters, and fontmake compiles a variable TTF and WOFF2.
+- **Spacing and kerning:** sidebearings and kerning pairs are defined as multiples of the stroke metrics, so they scale with weight.
+
+## Status
+
+Version 0.1.0 is feature-complete for printable ASCII but **not yet released**. No tag has been pushed, so the Releases page is empty. Until then, build the font locally (see [Building](#building)). Known rough edges are listed under [Known issues](#known-issues).
 
 ## Using the font
 
-Download the latest `ComputerFont-<version>.zip` from the [GitHub Releases](https://github.com/areimel/computer-font/releases) page and unzip it. It contains `fonts/variable/` (the variable TTF and WOFF2), `fonts/static/` (one TTF per named instance), and `OFL.txt`.
+Once a version is released, download `ComputerFont-<version>.zip` from the [GitHub Releases](https://github.com/areimel/computer-font/releases) page. It contains `fonts/variable/` (the variable TTF and WOFF2) and `OFL.txt`. Each release is created automatically when a `v*` tag is pushed.
 
 Load the variable WOFF2 in CSS. The `font-weight` range in `@font-face` lets the browser drive the `wght` axis, and `font-variation-settings` sets `ROND`:
 
@@ -34,7 +39,7 @@ Load the variable WOFF2 in CSS. The `font-weight` range in `@font-face` lets the
 
 Avoid setting `"wght"` inside `font-variation-settings`, because it overrides `font-weight`.
 
-The named instances are also available as static files in `fonts/static/`, for tools that do not read variable fonts:
+For tools that do not read variable fonts, build static instances locally with `PYTHONPATH=src .venv/bin/python -m computerfont.build --static`. This writes one TTF per named instance to `fonts/static/`:
 
 | Weight | Sharp (ROND 0) | Round (ROND 100) |
 |---|---|---|
@@ -47,11 +52,11 @@ The named instances are also available as static files in `fonts/static/`, for t
 
 ## Building
 
-Requires Python 3.11 or newer.
+Requires Python 3.12 or newer (CI uses 3.12).
 
 ```sh
 make setup    # create .venv and install dependencies (editable install)
-make build    # generate UFO masters and compile fonts into fonts/
+make build    # generate UFO masters and compile the variable font into fonts/variable/
 make test     # run the pytest suite
 make proof    # render a weight x radius specimen grid into proofs/
 ```
@@ -71,7 +76,7 @@ Other targets:
   ```
 
 - **Specimen sheets:** `make proof` writes `proofs/grid.png` (wght x ROND) and `proofs/waterfall.png` (sizes). `python -m computerfont.proof --readme` regenerates the banner at `docs/images/specimen.png`.
-- **Browser specimen:** run `make build`, then open `specimen/index.html` in a browser. It loads the built WOFF2 and has sliders for weight, roundness, and size.
+- **Browser specimen:** run `make build`, serve the repo root (for example `.venv/bin/python -m http.server 8000`), then open `http://localhost:8000/specimen/index.html`. It loads the built WOFF2 and has sliders for weight, roundness, and size.
 
 ## Project layout
 
@@ -89,7 +94,8 @@ computer-font/
     config.py        # family name, UPM, metrics, axis ranges, master parameters
     geometry.py      # points, polygons, orthogonal path builder helpers
     corners.py       # compatible corner rounding (degenerate at radius 0)
-    components.py    # reusable parts: stem, bar, bowl, notch, dot, tail, comma
+    components.py    # reusable parts: stems, bars, notched shapes, frames, arches,
+                     # dots, hooks, bowls, the blocky S, diagonals
     registry.py      # @glyph decorator and lookup
     glyphs/          # basic.py uppercase.py uppercase_diag.py lowercase.py
                      # digits.py punctuation.py symbols.py (README.md: how to add a glyph)
@@ -99,7 +105,7 @@ computer-font/
     designspace.py   # two axes, six masters, named instances
     build.py         # CLI: UFOs -> variable TTF, WOFF2, static instances
     proof.py         # PNG specimens: wght x ROND grid, waterfall, README banner
-  tests/             # conftest, geometry, corners, master compatibility, charset
+  tests/             # geometry, corners, master compatibility, charset, kerning
   specimen/
     index.html       # browser test page with wght and ROND sliders
     specimen.css
@@ -112,7 +118,22 @@ Each glyph is an **orthogonal polygon**: a list of vertices whose coordinates ar
 
 Every corner is emitted as a cubic curve with two off-curve handles. At radius 0 the handles sit on the corner, so sharp outlines remain structurally compatible with rounded ones. The radius of each corner is clamped so it fits its adjacent edges.
 
+The design keeps the original's signature details. Left verticals are heavy (`stem`), right verticals are thinner (`stem2`, 0.6 x stem), and the outer top-left corner of most letters has a small square step. Diagonal letters (K N V X Y Z v) use straight, fixed-vertex diagonals, which stay clean at every weight.
+
+Spacing is applied after drawing. `spacing.py` gives groups of glyphs target sidebearings, and the build shifts each outline into place. `kerning.py` defines kerning groups and pairs (AV, To, LT, P., and so on). Both are expressed as multiples of the sidebearing unit, so they tighten or loosen with weight.
+
 The variable font interpolates between six masters: `wght` at 200, 400 (the default) and 900, crossed with `ROND` at 0 and 100. `ROND` is a percentage of the maximum radius, which is half the local stem.
+
+## Known issues
+
+- `@` and `&` are the weakest glyphs and are due for a redraw.
+- At Black, N and K get crowded, `( )` look close to `[ ]`, and the `%` rings nearly touch the slash.
+- The counters in `a`, `e`, and `s` are tight at Black.
+- The family name "Computer Font" is a working name and may change before the first release.
+
+## Contributing
+
+Glyphs are Python functions. See [`src/computerfont/glyphs/README.md`](src/computerfont/glyphs/README.md) for how to add one, and [CLAUDE.md](CLAUDE.md) for the project rules. The most important rule is that every glyph must keep the same point structure at every weight and roundness. Before opening a pull request, preview your change with `scripts/render_glyphs.py`, then run `make test` and `make build`.
 
 ## Reference
 
