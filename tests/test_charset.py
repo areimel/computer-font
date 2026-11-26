@@ -1,5 +1,3 @@
-import pytest
-
 from computerfont.registry import all_glyphs
 
 ASCII = set(range(0x20, 0x7F))
@@ -17,7 +15,6 @@ def test_no_duplicate_unicodes_and_required_glyphs():
     assert names[0] == ".notdef" and "space" in names
 
 
-@pytest.mark.xfail(strict=False, reason="remaining glyphs not drawn yet")
 def test_full_ascii_coverage():
     have = {g.unicode for g in all_glyphs()}
     assert ASCII <= have
