@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Computer Font specimen</title>
+  <link rel="stylesheet" href="specimen.css">
+</head>
+<body>
+  <header class="masthead">
+    <h1>Computer Font</h1>
+    <p>Parametric variable font. Weight 200&ndash;900, roundness 0&ndash;100.</p>
+  </header>
+
+  <section class="controls" aria-label="Axes and size">
+    <label>
+      <span>Weight <code>wght</code></span>
+      <input id="wght" type="range" min="200" max="900" step="1" value="400">
+      <output id="wght-out">400</output>
+    </label>
+    <label>
+      <span>Roundness <code>ROND</code></span>
+      <input id="rond" type="range" min="0" max="100" step="1" value="0">
+      <output id="rond-out">0</output>
+    </label>
+    <label>
+      <span>Size</span>
+      <input id="size" type="range" min="12" max="200" step="1" value="72">
+      <output id="size-out">72px</output>
+    </label>
+  </section>
+
+  <main>
+    <section>
+      <h2>Sample <small>click to edit</small></h2>
+      <div id="sample" class="sample cf" contenteditable="true" spellcheck="false">Computer Font</div>
+    </section>
+
+    <section>
+      <h2>Characters <small>printable ASCII, U+0021&ndash;007E</small></h2>
+      <div id="charset" class="charset cf" aria-label="ASCII characters"></div>
+    </section>
+
+    <section>
+      <h2>Waterfall</h2>
+      <div id="waterfall" class="waterfall"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Computer Font is OFL-licensed. Glyphs are generated in code, never copied from another typeface.</p>
+  </footer>
+
+  <script>
+    (() => {
+      const SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 56, 64, 72, 80, 96];
+      const WATERFALL_TEXT = "The quick brown fox jumps over the lazy dog 0123456789";
+      const root = document.documentElement;
+
+      // Each slider writes one CSS custom property; every sample reads them.
+      const sliders = [
+        { id: "wght", prop: "--wght", fmt: (v) => v },
+        { id: "rond", prop: "--rond", fmt: (v) => v },
+        { id: "size", prop: "--size", fmt: (v) => `${v}px` },
+      ];
+      for (const { id, prop, fmt } of sliders) {
+        const input = document.getElementById(id);
+        const out = document.getElementById(`${id}-out`);
+        const apply = () => {
+          root.style.setProperty(prop, input.value);
+          out.textContent = fmt(input.value);
+        };
+        input.addEventListener("input", apply);
+        apply();
+      }
+
+      // Printable ASCII as one span per glyph.
+      const charset = document.getElementById("charset");
+      for (let c = 0x21; c <= 0x7e; c++) {
+        const span = document.createElement("span");
+        span.className = "ch";
+        span.textContent = String.fromCharCode(c);
+        span.title = `U+${c.toString(16).toUpperCase().padStart(4, "0")}`;
+        charset.appendChild(span);
+      }
+
+      // One row per size: a small label, then the sentence at that size.
+      const waterfall = document.getElementById("waterfall");
+      for (const size of SIZES) {
+        const row = document.createElement("div");
+        row.className = "wf-row";
+        const label = document.createElement("span");
+        label.className = "wf-label";
+        label.textContent = `${size}`;
+        const line = document.createElement("div");
+        line.className = "wf-line cf";
+        line.style.fontSize = `${size}px`;
+        line.textContent = WATERFALL_TEXT;
+        row.append(label, line);
+        waterfall.appendChild(row);
+      }
+    })();
+  </script>
+</body>
+</html>
