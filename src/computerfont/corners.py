@@ -50,10 +50,13 @@ def draw_contour(pen: SegmentPen, c: Contour, r: float, ndigits: int | None = 0)
             return (pt.x, pt.y)
         return (round(pt.x), round(pt.y)) if ndigits == 0 else (round(pt.x, ndigits), round(pt.y, ndigits))
 
+    # Start at the end of corner 0 and finish with corner 0's curve, so the path
+    # always closes on a curve that lands exactly on the start point. Closing on a
+    # line instead lets point pens drop it when it has zero length (r clamped to
+    # half the edge), which changes the point count in some masters only.
     quads = round_contour(c, r)
-    pen.moveTo(q(quads[0][0]))
-    for i, (a, c1, c2, b) in enumerate(quads):
-        if i:
-            pen.lineTo(q(a))
+    pen.moveTo(q(quads[0][3]))
+    for a, c1, c2, b in quads[1:] + quads[:1]:
+        pen.lineTo(q(a))
         pen.curveTo(q(c1), q(c2), q(b))
     pen.closePath()

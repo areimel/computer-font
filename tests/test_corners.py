@@ -2,7 +2,8 @@ import pytest
 
 from computerfont.corners import corner_points, draw_contour, round_contour
 from computerfont.geometry import Pt, polygon, rect
-from fontTools.pens.recordingPen import RecordingPen
+from fontTools.pens.pointPen import SegmentToPointPen
+from fontTools.pens.recordingPen import RecordingPen, RecordingPointPen
 
 
 def test_r0_gives_four_coincident_points_per_vertex():
@@ -11,15 +12,17 @@ def test_r0_gives_four_coincident_points_per_vertex():
         assert set(quad) == {p}
 
 
+def _point_count(c, r, ndigits=0):
+    rec = RecordingPointPen()
+    draw_contour(SegmentToPointPen(rec), c, r, ndigits=ndigits)
+    return sum(op == "addPoint" for op, _, _ in rec.value)
+
+
 def test_point_count_is_four_per_vertex():
-    pen = RecordingPen()
     c = rect(0, 0, 100, 100)
-    draw_contour(pen, c, 20, ndigits=None)
-    pts = [pt for op, args in pen.value for pt in args]
-    assert len(pts) == 4 * len(c.pts)
-    pen0 = RecordingPen()
-    draw_contour(pen0, c, 0)
-    assert len([pt for op, args in pen0.value for pt in args]) == 4 * len(c.pts)
+    assert _point_count(c, 20, ndigits=None) == 4 * len(c.pts)
+    assert _point_count(c, 0) == 4 * len(c.pts)
+    assert _point_count(c, 50) == 4 * len(c.pts)  # edges fully consumed by rounding
 
 
 def test_corner_geometry():

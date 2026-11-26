@@ -1,6 +1,7 @@
 """Every glyph must have identical point structure in all masters."""
 import pytest
-from fontTools.pens.recordingPen import RecordingPen
+from fontTools.pens.pointPen import SegmentToPointPen
+from fontTools.pens.recordingPen import RecordingPointPen
 
 from computerfont import config as C
 from computerfont.corners import draw_contour
@@ -11,9 +12,11 @@ def _structure(g, wght, rond):
     p = C.Params.at(wght, rond)
     out = []
     for c in g.contours(p):
-        pen = RecordingPen()
-        draw_contour(pen, c, p.radius)
-        out.append([(op, len(args)) for op, args in pen.value])
+        # Go through a point pen, as the UFO writer does: that conversion merges
+        # coincident closing points, which a segment-level check would miss.
+        rec = RecordingPointPen()
+        draw_contour(SegmentToPointPen(rec), c, p.radius)
+        out.append([args[1] if op == "addPoint" else op for op, args, _ in rec.value])
     return out
 
 
