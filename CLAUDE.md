@@ -12,7 +12,7 @@ Status: v0.1.0 content is complete (all 95 ASCII glyphs, spacing, basic kerning,
 
 ```sh
 make setup     # venv + requirements.txt + editable install
-make build     # python -m computerfont.build  (UFOs -> fonts/variable/*.ttf + .woff2)
+make build     # python -m computerfont.build --static  (UFOs -> fonts/variable/ TTF + WOFF2, fonts/static/ 12 TTFs)
 make test      # python -m pytest -q
 make proof     # python -m computerfont.proof (grid + waterfall PNGs in proofs/)
 make reference # bash scripts/fetch_reference.sh (gitignored reference/)
@@ -22,7 +22,7 @@ make clean     # remove build/ fonts/ sources/generated/ proofs/
 The Makefile sets `PYTHONPATH=src`. Outside make, prefix commands with it:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m computerfont.build --static          # also write static instances to fonts/static/
+PYTHONPATH=src .venv/bin/python -m computerfont.build                   # variable font only (faster iteration)
 PYTHONPATH=src .venv/bin/python -m computerfont.proof --readme          # docs/images/specimen.png (README banner)
 PYTHONPATH=src .venv/bin/python scripts/render_glyphs.py "ABC" out.png  # per-master glyph preview, no fontmake
 PYTHONPATH=src .venv/bin/python scripts/render_glyphs.py --all out.png  # every glyph
@@ -52,7 +52,7 @@ Outside `src/`:
 - `scripts/render_glyphs.py`: fast preview of glyphs at every master, rasterised straight from the parametric source with FreeTypePen (needs `freetype-py`).
 - `scripts/fetch_reference.sh`: downloads the original font into the gitignored `reference/`.
 - `specimen/index.html` and `specimen/specimen.css`: browser test page with wght, ROND, and size sliders. Serve the repo root over HTTP (for example `python -m http.server`) so the WOFF2 loads.
-- `.github/workflows/build.yml`: test, build, and proof on push and PR. Pushing a `v*` tag creates a GitHub Release with a zip of the fonts and OFL, via `gh release create`. Third-party actions are not used for releases.
+- `.github/workflows/build.yml`: test, build, and proof on push and PR. Pushing a `v*` tag creates a GitHub Release with a zip of the fonts (variable and static) and OFL, via `gh release create`. Third-party actions are not used for releases.
 
 Tests in `tests/`:
 

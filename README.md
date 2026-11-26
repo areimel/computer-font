@@ -18,7 +18,7 @@ Version 0.1.0 is feature-complete for printable ASCII but **not yet released**. 
 
 ## Using the font
 
-Once a version is released, download `ComputerFont-<version>.zip` from the [GitHub Releases](https://github.com/areimel/computer-font/releases) page. It contains `fonts/variable/` (the variable TTF and WOFF2) and `OFL.txt`. Each release is created automatically when a `v*` tag is pushed.
+Once a version is released, download `ComputerFont-<version>.zip` from the [GitHub Releases](https://github.com/areimel/computer-font/releases) page. It contains `fonts/variable/` (the variable TTF and WOFF2), `fonts/static/` (one TTF per named instance), and `OFL.txt`. Each release is created automatically when a `v*` tag is pushed.
 
 Load the variable WOFF2 in CSS. The `font-weight` range in `@font-face` lets the browser drive the `wght` axis, and `font-variation-settings` sets `ROND`:
 
@@ -39,7 +39,7 @@ Load the variable WOFF2 in CSS. The `font-weight` range in `@font-face` lets the
 
 Avoid setting `"wght"` inside `font-variation-settings`, because it overrides `font-weight`.
 
-For tools that do not read variable fonts, build static instances locally with `PYTHONPATH=src .venv/bin/python -m computerfont.build --static`. This writes one TTF per named instance to `fonts/static/`:
+For tools that do not read variable fonts, each named instance is also built as a static TTF in `fonts/static/`:
 
 | Weight | Sharp (ROND 0) | Round (ROND 100) |
 |---|---|---|
@@ -56,7 +56,7 @@ Requires Python 3.12 or newer (CI uses 3.12).
 
 ```sh
 make setup    # create .venv and install dependencies (editable install)
-make build    # generate UFO masters and compile the variable font into fonts/variable/
+make build    # generate UFO masters; compile fonts/variable/ (TTF + WOFF2) and fonts/static/
 make test     # run the pytest suite
 make proof    # render a weight x radius specimen grid into proofs/
 ```

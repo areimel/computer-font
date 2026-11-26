@@ -9,7 +9,7 @@ setup:
 	$(PY) -m pip install -e .
 
 build:
-	$(PY) -m computerfont.build
+	$(PY) -m computerfont.build --static
 
 test:
 	$(PY) -m pytest -q
