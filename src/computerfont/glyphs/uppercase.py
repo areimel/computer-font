@@ -1,7 +1,7 @@
-"""Uppercase A-Z (U+0041-005A). Rectilinear: diagonals are stair-step strokes."""
-from ..components import arch, cap_width, frame, mid_bar, notched_poly, notched_rect, stair
+"""Uppercase A-Z (U+0041-005A). Rectilinear letters; K N V X Y Z (diagonals) live in uppercase_diag.py."""
+from ..components import cap_width, frame, mid_bar, notched_poly, notched_rect
 from ..config import Params
-from ..geometry import Contour, rect
+from ..geometry import rect
 from ..registry import glyph
 
 
@@ -122,14 +122,6 @@ def J(p: Params):
     return [notched_poly(p, c, tl=3)]
 
 
-@glyph("K", 0x4B, width=cap_width)
-def K(p: Params):
-    x0, x1, s, s2, b = p.sb, p.sb + p.cap_w, p.stem, p.stem2, p.bar
-    ym = p.cap // 2
-    upper = stair(x0 + s - s2, ym - b // 2, x1, p.cap, s2, b)
-    return [notched_rect(p, x0, 0, x0 + s, p.cap, "tl"), upper, upper.flipped(ym)]
-
-
 @glyph("L", 0x4C, width=cap_width)
 def L(p: Params):
     x0, x1, s, b = p.sb, p.sb + p.cap_w, p.stem, p.bar
@@ -145,11 +137,6 @@ def M(p: Params):
         (x1 - s2, p.cap - b), (x1 - s2, 0), (x1, 0), (x1, p.cap), (x0, p.cap),
     ]
     return [notched_poly(p, c, tl=11)]
-
-
-@glyph("N", 0x4E, width=cap_width)
-def N(p: Params):
-    return [arch(p, p.sb, p.sb + p.cap_w, p.cap, outer="tl", inner="tr")]
 
 
 @glyph("O", 0x4F, width=cap_width)
@@ -212,18 +199,6 @@ def U(p: Params):
     return [notched_poly(p, c, tl=7)]
 
 
-def _vee(p: Params, x0: float, x1: float, y0: float, y1: float, c: float) -> list[Contour]:
-    """Two stair arms meeting at the centre line (heavy left arm, thin right arm)."""
-    cx = (x0 + x1) // 2
-    right = stair(cx - c, y0, x1, y1, p.stem2, p.bar)
-    return [right, stair(cx - c, y0, x1, y1, p.stem, p.bar).mirrored(cx)]
-
-
-@glyph("V", 0x56, width=cap_width)
-def V(p: Params):
-    return _vee(p, p.sb, p.sb + p.cap_w, 0, p.cap, p.stem2)
-
-
 @glyph("W", 0x57, width=_wide)
 def W(p: Params):
     x0, x1, s, s2, b = p.sb, p.sb + _wide_w(p), p.stem, p.stem2, p.bar
@@ -234,31 +209,3 @@ def W(p: Params):
         (m0, b), (x0 + s, b), (x0 + s, p.cap), (x0, p.cap),
     ]
     return [notched_poly(p, c, tl=11)]
-
-
-@glyph("X", 0x58, width=cap_width)
-def X(p: Params):
-    x0, x1 = p.sb, p.sb + p.cap_w
-    cx = (x0 + x1) // 2
-    return [
-        stair(x0, 0, x1, p.cap, p.stem2, p.bar),
-        stair(x0, 0, x1, p.cap, p.stem, p.bar).mirrored(cx),
-    ]
-
-
-@glyph("Y", 0x59, width=cap_width)
-def Y(p: Params):
-    x0, x1, s, b = p.sb, p.sb + p.cap_w, p.stem, p.bar
-    ym = p.cap // 2
-    stalk = rect((x0 + x1 - s) // 2, 0, (x0 + x1 + s) // 2, ym + b)
-    return [*_vee(p, x0, x1, ym, p.cap, s // 2), stalk]
-
-
-@glyph("Z", 0x5A, width=cap_width)
-def Z(p: Params):
-    x0, x1, s, b = p.sb, p.sb + p.cap_w, p.stem, p.bar
-    return [
-        notched_rect(p, x0, p.cap - b, x1, p.cap, "tl"),
-        rect(x0, 0, x1, b),
-        stair(x0, b // 2, x1, p.cap - b // 2, s, b),
-    ]
