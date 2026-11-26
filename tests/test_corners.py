@@ -3,7 +3,7 @@ import pytest
 from computerfont.corners import corner_points, draw_contour, round_contour
 from computerfont.geometry import Pt, polygon, rect
 from fontTools.pens.pointPen import SegmentToPointPen
-from fontTools.pens.recordingPen import RecordingPen, RecordingPointPen
+from fontTools.pens.recordingPen import RecordingPointPen
 
 
 def test_r0_gives_four_coincident_points_per_vertex():

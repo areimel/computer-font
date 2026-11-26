@@ -1,4 +1,4 @@
-from computerfont.geometry import Contour, Pt, Turtle, notch_corners, polygon, rect
+from computerfont.geometry import Pt, Turtle, notch_corners, polygon, rect
 
 
 def test_rect_is_ccw_with_positive_area():

@@ -1,16 +1,11 @@
 """Symbols: # $ % & * + < = > @ ^ ~ (AGL names numbersign ... asciitilde)."""
-from ..components import bar, dot, frame, notched_rect, stem
+from ..components import bar, frame, lc_width, math_axis, notched_rect, s_shape, stem
 from ..config import Params
 from ..geometry import Contour, polygon, rect
 from ..registry import glyph
 
 
-# ---- private helpers (components.py candidates) -------------------------------------------
-def _mid(p: Params) -> int:
-    """Math axis: vertical middle of the x-height."""
-    return p.xh // 2
-
-
+# ---- private helpers (each used by only 1-2 glyphs here) -----------------------------------
 def _diag(x0: float, y0: float, x1: float, y1: float, t: float) -> Contour:
     """Slanted stroke from bottom (x0,y0) to top (x1,y1), horizontal thickness t (4 fixed vertices)."""
     return polygon((x0, y0), (x0 + t, y0), (x1 + t, y1), (x1, y1))
@@ -31,17 +26,6 @@ def _chevron(x0: float, x1: float, cy: float, h: float, t: float) -> Contour:
     return polygon((x0, cy), (x1 - t, cy + h), (x1, cy + h), (x0 + t, cy), (x1, cy - h), (x1 - t, cy - h))
 
 
-def _s_shape(p: Params, x0: float, y0: float, x1: float, y1: float) -> Contour:
-    """Blocky S in one 12-point polygon: top bar, left upper stem, middle bar, right lower stem, bottom bar."""
-    s, s2, b = p.stem, p.stem2, p.bar
-    lo = (y0 + y1 - b) // 2
-    hi = lo + b
-    return polygon(
-        (x0, y1), (x1, y1), (x1, y1 - b), (x0 + s, y1 - b), (x0 + s, hi), (x1, hi),
-        (x1, y0), (x0, y0), (x0, y0 + b), (x1 - s2, y0 + b), (x1 - s2, lo), (x0, lo),
-    )
-
-
 # ---- glyphs -------------------------------------------------------------------------------
 @glyph("numbersign", 0x23, width=lambda p: p.adv(p.cap_w))
 def numbersign(p: Params):
@@ -57,7 +41,7 @@ def dollar(p: Params):
     x0, x1 = p.sb, p.sb + p.cap_w
     cx = (x0 + x1 - p.stem2) / 2
     ext = p.bar  # the vertical stem pokes out above and below the S
-    return [_s_shape(p, x0, 0, x1, p.cap), stem(p, cx, -ext, p.cap + ext, p.stem2)]
+    return [s_shape(p, x0, 0, x1, p.cap), stem(p, cx, -ext, p.cap + ext, p.stem2)]
 
 
 @glyph("percent", 0x25, width=lambda p: p.adv(p.cap_w + p.cap_w // 4))
@@ -84,7 +68,7 @@ def ampersand(p: Params):
     ]
 
 
-@glyph("asterisk", 0x2A, width=lambda p: p.adv(p.lc_w))
+@glyph("asterisk", 0x2A, width=lc_width)
 def asterisk(p: Params):
     cx, r = p.sb + p.lc_w // 2, p.lc_w // 2
     cy = p.cap - r
@@ -97,29 +81,29 @@ def asterisk(p: Params):
     ]
 
 
-@glyph("plus", 0x2B, width=lambda p: p.adv(p.lc_w))
+@glyph("plus", 0x2B, width=lc_width)
 def plus(p: Params):
     r = p.lc_w // 2
-    return [_cross(p.sb + r, _mid(p), r, r, p.stem2, p.bar)]
+    return [_cross(p.sb + r, math_axis(p), r, r, p.stem2, p.bar)]
 
 
-@glyph("less", 0x3C, width=lambda p: p.adv(p.lc_w))
+@glyph("less", 0x3C, width=lc_width)
 def less(p: Params):
-    return [_chevron(p.sb, p.sb + p.lc_w, _mid(p), p.lc_w // 2, p.stem)]
+    return [_chevron(p.sb, p.sb + p.lc_w, math_axis(p), p.lc_w // 2, p.stem)]
 
 
-@glyph("equal", 0x3D, width=lambda p: p.adv(p.lc_w))
+@glyph("equal", 0x3D, width=lc_width)
 def equal(p: Params):
-    x0, x1, cy = p.sb, p.sb + p.lc_w, _mid(p)
+    x0, x1, cy = p.sb, p.sb + p.lc_w, math_axis(p)
     return [
         notched_rect(p, x0, cy + p.bar // 2, x1, cy + p.bar // 2 + p.bar, "tl"),
         bar(p, x0, x1, cy - p.bar // 2, align="top"),
     ]
 
 
-@glyph("greater", 0x3E, width=lambda p: p.adv(p.lc_w))
+@glyph("greater", 0x3E, width=lc_width)
 def greater(p: Params):
-    c = _chevron(p.sb, p.sb + p.lc_w, _mid(p), p.lc_w // 2, p.stem)
+    c = _chevron(p.sb, p.sb + p.lc_w, math_axis(p), p.lc_w // 2, p.stem)
     return [c.mirrored(p.sb + p.lc_w / 2)]
 
 
@@ -135,16 +119,16 @@ def at(p: Params):
     ]
 
 
-@glyph("asciicircum", 0x5E, width=lambda p: p.adv(p.lc_w))
+@glyph("asciicircum", 0x5E, width=lc_width)
 def asciicircum(p: Params):
     x0, x1, cx = p.sb, p.sb + p.lc_w, p.sb + p.lc_w // 2
     top, y0, v = p.cap, p.cap - p.lc_w // 2, p.bar
     return [polygon((x0, y0), (cx, top), (x1, y0), (x1, y0 - v), (cx, top - v), (x0, y0 - v))]
 
 
-@glyph("asciitilde", 0x7E, width=lambda p: p.adv(p.lc_w))
+@glyph("asciitilde", 0x7E, width=lc_width)
 def asciitilde(p: Params):
     x0, x1, w = p.sb, p.sb + p.lc_w, p.lc_w // 3
-    base, h, v = _mid(p) - p.bar, p.lc_w // 3, p.bar
+    base, h, v = math_axis(p) - p.bar, p.lc_w // 3, p.bar
     top = [(x0, base + h // 2), (x0 + w, base + h), (x0 + 2 * w, base), (x1, base + h // 2)]
     return [polygon(*top, *[(x, y + v) for x, y in reversed(top)])]

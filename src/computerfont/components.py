@@ -7,7 +7,7 @@ Coordinates are absolute font units, baseline y=0. Builders return ``Contour``
 from __future__ import annotations
 
 from .config import Params
-from .geometry import Contour, notch_corners, polygon, rect
+from .geometry import Contour, Pt, notch_corners, polygon, rect
 
 # Corner indices of a rectangle contour (CCW from bottom-left).
 BL, BR, TR, TL = 0, 1, 2, 3
@@ -82,3 +82,89 @@ def arch(p: Params, x0: float, x1: float, y1: float, outer: str = "tl", inner: s
     cuts.update({inn[c]: p.notch for c in inner.split()})
     return notch_corners(polygon(*pts), cuts)
 
+
+
+# ---- widths ---------------------------------------------------------------
+
+def cap_width(p: Params) -> int:
+    """Advance width of a standard capital box (``p.cap_w``)."""
+    return p.adv(p.cap_w)
+
+
+def lc_width(p: Params) -> int:
+    """Advance width of a standard lowercase / digit box (``p.lc_w``)."""
+    return p.adv(p.lc_w)
+
+
+# ---- vertical positions ---------------------------------------------------
+
+def mid_bar(p: Params, height: float | None = None) -> tuple[int, int]:
+    """(bottom, top) of a ``p.bar``-thick bar centred in ``height`` (default cap height)."""
+    lo = ((p.cap if height is None else height) - p.bar) // 2
+    return lo, lo + p.bar
+
+
+def math_axis(p: Params) -> int:
+    """Vertical middle of the x-height, where operators (+ < = > ~) are centred."""
+    return p.xh // 2
+
+
+# ---- polygons -------------------------------------------------------------
+
+def notched_poly(p: Params, pts, tl: int | tuple[int, ...] = (), flip: float | None = None) -> Contour:
+    """Orthogonal polygon (CCW) with the face's square step cut at vertex index/indices ``tl``.
+
+    ``flip`` mirrors x about flip/2 (pass x0 + x1) so a right-hand variant of a
+    left-hand outline keeps its point order; ``tl`` then names the mirrored vertex.
+    """
+    if isinstance(tl, int):
+        tl = (tl,)
+    if flip is not None:
+        pts = [(flip - x, y) for x, y in pts]
+    c = notch_corners(Contour(tuple(Pt(*q) for q in pts)), {i: p.notch for i in tl})
+    return c.oriented(True)
+
+
+def stair(x0: float, y0: float, x1: float, y1: float, tv: float, th: float, n: int = 3) -> Contour:
+    """Stair-step stroke climbing up-right from (x0, y0) to (x1, y1) in ``n`` steps.
+
+    Horizontal treads are ``th`` thick, vertical risers ``tv`` wide. One polygon with
+    4n+2 vertices at any weight (the face's orthogonal "diagonal": K X Y V Z).
+    """
+    xs = [x0 + (x1 - tv - x0) * j // n for j in range(n + 1)]
+    ys = [y0 + (y1 - th - y0) * j // n for j in range(n + 1)]
+    pts = [(x0, y0)]
+    for j in range(1, n + 1):
+        pts += [(xs[j] + tv, ys[j - 1]), (xs[j] + tv, ys[j] + (th if j == n else 0))]
+    for j in range(n, 0, -1):
+        pts += [(xs[j], ys[j] + th), (xs[j], ys[j - 1] + th)]
+    pts.append((x0, ys[0] + th))
+    return polygon(*pts)
+
+
+def s_shape(p: Params, x0: float, y0: float, x1: float, y1: float, tl: bool = False) -> Contour:
+    """Blocky S in one 12-point polygon (5, s, $): top bar, left upper stem, middle
+    bar, right lower stem, bottom bar. ``tl`` steps the top-left corner."""
+    s, s2, b = p.stem, p.stem2, p.bar
+    lo, hi = mid_bar(p, y0 + y1)
+    pts = [(x0, y0), (x1, y0), (x1, hi), (x0 + s, hi), (x0 + s, y1 - b), (x1, y1 - b),
+           (x1, y1), (x0, y1), (x0, lo), (x1 - s2, lo), (x1 - s2, y0 + b), (x0, y0 + b)]
+    return notched_poly(p, pts, tl=7 if tl else ())
+
+
+def tail_dot(p: Params, x: float, y: float, h: float | None = None) -> Contour:
+    """Square dot with lower-left corner (x, y) and a half-width tail hanging ``h`` below it."""
+    d, h = p.dot, p.dot if h is None else h
+    return notched_poly(p, [(x + d / 2, y - h), (x + d, y - h), (x + d, y + d), (x, y + d), (x, y), (x + d / 2, y)])
+
+
+def desc_hook(p: Params, x0: float, x1: float, sw: float) -> Contour:
+    """Descender hook (g j y): right stem ``sw`` wide, bottom bar, short tick up on the left."""
+    d, b = p.desc, p.bar
+    return notched_poly(p, [(x0, d), (x1, d), (x1, b // 2), (x1 - sw, b // 2), (x1 - sw, d + b),
+                            (x0 + p.stem2, d + b), (x0 + p.stem2, d + b + p.notch), (x0, d + b + p.notch)])
+
+
+def bowl_counter(p: Params, x0: float, x1: float) -> Contour:
+    """Counter of a b/d/p/q bowl (hole with a notched top-right corner)."""
+    return notched_rect(p, x0 + p.stem, p.bar, x1 - p.stem2, p.xh - p.bar, "tr").counter()

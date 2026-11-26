@@ -39,12 +39,20 @@ def O(p: Params):
   `polygon((x,y),...)`; `Turtle(x,y).h(dx).v(dy).to(x,y).close(counter=False)`;
   `notch_corners(contour, {vertex_index: size})` cuts a square step at a vertex
   (works on concave vertices too, adding material).
-- `components`: `stem(p, x, y0, y1, w=None)`, `bar(p, x0, x1, y, t=None, align="bottom|top|center")`,
-  `notched_rect(p, x0,y0,x1,y1, corners="tl br", n=None)`,
+- `components`: strokes `stem(p, x, y0, y1, w=None)`, `bar(p, x0, x1, y, t=None, align="bottom|top|center")`,
+  `dot(p, cx, cy, size=None)`; rectangles `notched_rect(p, x0,y0,x1,y1, corners="tl br", n=None)`,
   `frame(p, x0,y0,x1,y1, outer="tl", inner="tr", sides=None, bars=None)` -> [outer, counter],
-  `arch(p, x0, x1, y1, outer="tl", inner="tr")` (n shape), `dot(p, cx, cy, size=None)`.
+  `arch(p, x0, x1, y1, outer="tl", inner="tr")` (n shape);
+  polygons `notched_poly(p, pts, tl=(i, ...), flip=None)` (point list + top-left step at vertex
+  index/indices; `flip=x0+x1` mirrors x for right-hand variants), `stair(x0,y0,x1,y1, tv, th, n=3)`
+  (stair-step diagonal), `s_shape(p, x0,y0,x1,y1, tl=False)` (blocky S: 5 s $),
+  `tail_dot(p, x, y, h=None)` (, ' " `), `desc_hook(p, x0, x1, sw)` (g j y),
+  `bowl_counter(p, x0, x1)` (b d p q); metrics `mid_bar(p, height=None)` -> (lo, hi) of a bar
+  centred in `height` (default cap), `math_axis(p)` (operator axis, xh // 2);
+  widths `cap_width(p)`, `lc_width(p)` for `@glyph(..., width=...)`.
   Corner names: `"tl" "tr" "bl" "br"`, space-separated for several.
-- Need a shape used by 3+ glyphs? Add it to `components.py` (generic, Params-driven).
+- Need a shape used by 3+ glyphs (or 2+ files)? Add it to `components.py` (generic, Params-driven)
+  and keep that file under ~300 lines (split into a package by responsibility if it grows).
 
 ## Example: a stem + bar glyph (T-like)
 
