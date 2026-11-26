@@ -12,9 +12,16 @@ Computer Font is an OFL-licensed, parametric, code-drawn variable font inspired 
 make setup     # venv + requirements.txt + editable install
 make build     # python -m computerfont.build  (UFOs -> fonts/)
 make test      # python -m pytest -q
-make proof     # python -m computerfont.proof (specimen grid PNG)
+make proof     # python -m computerfont.proof (grid + waterfall PNGs in proofs/)
 make reference # bash scripts/fetch_reference.sh (gitignored reference/)
 make clean     # remove build/ fonts/ sources/generated/ proofs/
+```
+
+Also available (not make targets):
+
+```sh
+PYTHONPATH=src .venv/bin/python -m computerfont.proof --readme      # docs/images/specimen.png (README banner)
+PYTHONPATH=src .venv/bin/python scripts/render_glyphs.py "ABC" out.png  # per-master glyph preview, no fontmake
 ```
 
 Run `make test` before every commit.
@@ -28,23 +35,33 @@ All code lives in `src/computerfont/`:
 - `corners.py`: compatible corner rounding. At radius 0 the handles collapse onto the corner.
 - `components.py`: reusable shapes (stem, bar, bowl, notch, dot, tail, comma). The DRY core.
 - `registry.py`: `@glyph(...)` decorator and lookup table.
-- `glyphs/`: `uppercase.py`, `lowercase.py`, `digits.py`, `punctuation.py`, `symbols.py`. Glyph files only compose parts.
-- `ufo.py`: draws the registry into one ufoLib2 font per master (metrics, names, OS/2).
-- `designspace.py`: two axes, four masters, named instances.
+- `glyphs/`: `basic.py` (.notdef, space), `uppercase.py`, `uppercase_diag.py` (diagonal capitals K N V X Y Z), `lowercase.py`, `digits.py`, `punctuation.py`, `symbols.py`. Glyph files only compose parts.
+- `ufo.py`: draws the registry into one ufoLib2 font per master (metrics, names, OS/2), applies sidebearings and kerning.
+- `spacing.py`: per-group sidebearing targets (multiples of `p.sb`) and the space width.
+- `kerning.py`: kerning groups and weight-scaled pair values.
+- `designspace.py`: two axes, six masters (wght 200/400/900 x ROND 0/100), named instances.
 - `build.py`: CLI that generates UFOs and runs fontmake for the variable TTF, WOFF2, and static instances.
-- `proof.py`: PNG specimen across the wght x ROND grid.
+- `proof.py`: PNG specimens. Default mode writes the wght x ROND grid and size waterfall to `proofs/`. `--readme` writes the README banner to `docs/images/specimen.png`.
+
+Outside `src/`:
+
+- `scripts/render_glyphs.py`: fast preview of glyphs at every master location, drawn from the parametric source (no fontmake).
+- `scripts/fetch_reference.sh`: downloads the original font into the gitignored `reference/`.
+- `specimen/index.html` and `specimen/specimen.css`: browser test page with wght, ROND, and size sliders.
+- `.github/workflows/build.yml`: test and build on push and PR; release on `v*` tags.
 
 Tests live in `tests/`. Do not add files under `src/` or `tests/` outside the task at hand.
 
 ## HARD RULES
 
-1. **Identical point structure.** Every glyph must have the same point structure in all 4 masters. No boolean operations. No conditional points that depend on weight or radius.
+1. **Identical point structure.** Every glyph must have the same point structure in all 6 masters. No boolean operations. No conditional points that depend on weight or radius.
 2. **Shared metrics only.** Define shapes through metrics from `config.py`. No magic numbers in glyph files.
 3. **DRY.** Any shape used in 3 or more glyphs goes into `components.py`.
 4. **File size.** Keep files under roughly 300–400 lines. Split by responsibility.
 5. **Never commit the original font.** Never commit `reference/` or anything derived from the original font's files.
 6. **No icons or pictograms.** The charset is text glyphs only.
 7. **Test before committing.** Run `make test`. Do not commit while it fails.
+8. **Verify visual changes.** After any change to glyph shapes, components, or corners, run `scripts/render_glyphs.py` on the affected characters and read the PNG before claiming the change works.
 
 ## Commits
 

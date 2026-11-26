@@ -1,9 +1,11 @@
-"""Specimen PNGs for the variable font: a wght x ROND grid and a size waterfall.
+"""Specimen PNGs for the variable font: a wght x ROND grid, a size waterfall, and a README banner.
 
 Run ``make build`` first, then ``make proof``. Writes proofs/grid.png and proofs/waterfall.png.
+``python -m computerfont.proof --readme`` writes docs/images/specimen.png instead.
 """
 from __future__ import annotations
 
+import argparse
 import math
 from io import BytesIO
 from pathlib import Path
@@ -17,14 +19,25 @@ from computerfont import config
 ROOT = Path(__file__).resolve().parents[2]
 VF_PATH = ROOT / "fonts" / "variable" / config.VF_NAME
 PROOFS_DIR = ROOT / "proofs"
+README_IMAGE = ROOT / "docs" / "images" / "specimen.png"
 
 WGHTS = (200, 400, 700, 900)
+ROND_ROW_WGHT = 800  # heavy enough that corner rounding is clearly visible
 ROUNDS = (0, 50, 100)
 GRID_SIZE = 36  # px, ASCII rows in the grid
 ASCII_LINES = 3
 ASCII = "".join(chr(c) for c in range(0x21, 0x7F))  # printable ASCII, no space
 WATERFALL_TEXT = "The quick brown fox jumps over the lazy dog 0123456789"
 WATERFALL_SIZES = (12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 56, 64, 72, 80, 96)
+
+BANNER_WIDTH = 1600
+BANNER_PAD = 64
+BANNER_GAP = 40  # vertical gap between banner sections
+BANNER_CELL_GAP = 48  # horizontal gap between samples in a row
+BANNER_WGHTS = (200, 300, 500, 700, 900)
+BANNER_ROUNDS = (0, 25, 50, 75, 100)
+BANNER_SAMPLE = "Ag8"
+BANNER_SAMPLE_SIZE = 80
 
 BG = (255, 255, 255)
 FG = (20, 20, 20)
@@ -123,8 +136,73 @@ def build_waterfall(vf: TTFont) -> Image.Image:
     return render_rows(rows)
 
 
+def _hstack(images: list[Image.Image], gap: int) -> Image.Image:
+    """Place images side by side, top-aligned, on the background."""
+    width = sum(im.width for im in images) + gap * (len(images) - 1)
+    out = Image.new("RGB", (width, max(im.height for im in images)), BG)
+    x = 0
+    for im in images:
+        out.paste(im, (x, 0))
+        x += im.width + gap
+    return out
+
+
+def _vstack(blocks: list[Image.Image]) -> Image.Image:
+    """Stack blocks top to bottom, left-aligned, on a fixed-width banner canvas."""
+    height = sum(b.height for b in blocks) + BANNER_GAP * (len(blocks) - 1) + 2 * BANNER_PAD
+    out = Image.new("RGB", (BANNER_WIDTH, height), BG)
+    y = BANNER_PAD
+    for b in blocks:
+        out.paste(b, (BANNER_PAD, y))
+        y += b.height + BANNER_GAP
+    return out
+
+
+def _sample_cell(label: str, font: ImageFont.FreeTypeFont) -> Image.Image:
+    return render_rows([(label_font(), label, LABEL_FG), (font, BANNER_SAMPLE, FG)])
+
+
+def build_banner(vf: TTFont) -> Image.Image:
+    """Clean README banner: title, a weight row, a ROND row, and an ASCII sample."""
+    title_font = font_at(instance_bytes(vf, default_location()), 160)
+    weight_row = _hstack(
+        [
+            _sample_cell(f"wght {w}", font_at(instance_bytes(vf, {"wght": w, "ROND": 0}), BANNER_SAMPLE_SIZE))
+            for w in BANNER_WGHTS
+        ],
+        BANNER_CELL_GAP,
+    )
+    rond_row = _hstack(
+        [
+            _sample_cell(f"ROND {r}", font_at(instance_bytes(vf, {"wght": ROND_ROW_WGHT, "ROND": r}), BANNER_SAMPLE_SIZE))
+            for r in BANNER_ROUNDS
+        ],
+        BANNER_CELL_GAP,
+    )
+    ascii_font = font_at(instance_bytes(vf, default_location()), 32)
+    ascii_block = render_rows([(ascii_font, line, FG) for line in ascii_lines()])
+    return _vstack(
+        [
+            render_rows([(title_font, config.FAMILY_NAME, FG)]),
+            render_rows([(label_font(), "WEIGHT  200 to 900", LABEL_FG)]),
+            weight_row,
+            render_rows([(label_font(), f"ROUNDNESS  ROND 0 to 100, at wght {ROND_ROW_WGHT}", LABEL_FG)]),
+            rond_row,
+            ascii_block,
+        ]
+    )
+
+
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--readme", action="store_true", help="write the README banner to docs/images/specimen.png")
+    args = ap.parse_args()
     vf = load_vf()
+    if args.readme:
+        README_IMAGE.parent.mkdir(parents=True, exist_ok=True)
+        build_banner(vf).save(README_IMAGE)
+        print(f"wrote {README_IMAGE}")
+        return
     PROOFS_DIR.mkdir(exist_ok=True)
     grid_path = PROOFS_DIR / "grid.png"
     waterfall_path = PROOFS_DIR / "waterfall.png"
